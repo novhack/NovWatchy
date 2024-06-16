@@ -1,0 +1,346 @@
+#include <Arduino.h>
+#include <Wire.h>
+
+#include "hardware.h"
+#include "config.h"
+#include "settings.h"
+#include "gui/gui.h"
+#include "motor.h"
+
+#include "bma.h"
+#include "wifi.h"
+#include "app/about.h"
+#include "app/accelerometer.h"
+#include "app/buzz.h"
+#include "app/ntp.h"
+#include "app/set_time.h"
+#include "app/timer.h"
+#include "app/update.h"
+#include "app/weather.h"
+
+// Default declarations
+WatchyRTC rtc = WatchyRTC();
+GxEPD2_BW<WatchyDisplay, WatchyDisplay::HEIGHT> display(WatchyDisplay{});
+int weatherIntervalCounter = -1;
+long gmtOffset = 0;
+bool alreadyInMenu = true;
+int guiState = WATCHFACE_STATE;
+tmElements_t bootTime = {
+  .Second = 0, 
+  .Minute = 0,
+  .Hour = 0,
+  .Wday = 0,
+  .Day = 0,
+  .Month = 0,
+  .Year = 0,
+};
+int menuIndex = 0;
+uint32_t lastIPAddress = 0;
+char lastSSID[30] = "";
+bool WIFI_CONFIGURED = false;
+bool BLE_CONFIGURED = false;
+tmElements_t currentTime = {
+  .Second = 0, 
+  .Minute = 0,
+  .Hour = 0,
+  .Wday = 0,
+  .Day = 0,
+  .Month = 0,
+  .Year = 0,
+};
+weatherData currentWeather = {
+  .temperature = 0,
+  .weatherConditionCode = 0,
+  .isMetric = true,
+  .weatherDescription = "",
+  .external = false,
+  .sunrise =  {
+    .Second = 0, 
+    .Minute = 0,
+    .Hour = 0,
+    .Wday = 0,
+    .Day = 0,
+    .Month = 0,
+    .Year = 0,
+  },
+  .sunset =  {
+    .Second = 0, 
+    .Minute = 0,
+    .Hour = 0,
+    .Wday = 0,
+    .Day = 0,
+    .Month = 0,
+    .Year = 0,
+  },
+};
+
+float get_battery_voltage() {
+    return analogReadMilliVolts(BATT_ADC_PIN) / 1000.0f * 2.0f;
+}
+
+uint8_t get_board_revision() {
+  esp_chip_info_t chip_info;
+  esp_chip_info(&chip_info);
+  if(chip_info.model == CHIP_ESP32) { // Revision 1.0 - 2.0
+    Wire.beginTransmission(0x68); // v1.0 has DS3231
+    if (Wire.endTransmission() == 0) {
+      return 10;
+    }
+    delay(1);
+    Wire.beginTransmission(0x51); // v1.5 and v2.0 have PCF8563
+    if (Wire.endTransmission() == 0) {
+        pinMode(35, INPUT);
+        if (digitalRead(35) == 0) {
+          return 20; // In v2.0, pin 35 is BTN 3 and has a pulldown
+        } else {
+          return 15; // In v1.5, pin 35 is the battery ADC
+        }
+    }
+  }
+  return -1;
+}
+
+void deep_sleep() {
+  display.hibernate();
+
+  // Resets the alarm flag in the RTC
+  rtc.clearAlarm();
+
+  // Set GPIOs 0-39 to input to avoid power leaking out
+  const uint64_t ignore = 0b11110001000000110000100111000010; 
+  for (int i = 0; i < GPIO_NUM_MAX; i++) {
+    // Ignore some GPIOs due to resets
+    if ((ignore >> i) & 0b1) {
+      continue;
+    }
+    pinMode(i, INPUT);
+  }
+  
+  // Enable deep sleep wake on RTC interrupt
+  esp_sleep_enable_ext0_wakeup((gpio_num_t)RTC_INT_PIN, 0);
+  // Enable deep sleep wake on button press
+  esp_sleep_enable_ext1_wakeup(BTN_PIN_MASK, ESP_EXT1_WAKEUP_ANY_HIGH);
+  esp_deep_sleep_start();
+}
+
+
+
+/**
+ * Runs every time device is woken up from the deep sleep
+ */
+void hardware_setup(String datetime) {
+  esp_sleep_wakeup_cause_t wakeup_reason;
+  wakeup_reason = esp_sleep_get_wakeup_cause(); // get wake up reason
+  Wire.begin(SDA, SCL);                         // init i2c
+  rtc.init();
+
+  // Init the display since is almost sure we will use it
+  display.epd2.initWatchy();
+
+  switch (wakeup_reason) {
+    case ESP_SLEEP_WAKEUP_EXT0: // RTC Alarm
+      rtc.read(currentTime);
+      switch (guiState) {
+      case WATCHFACE_STATE:
+        showWatchFace(true); // partial updates on tick
+        if (settings.vibrateOClock) {
+          if (currentTime.Minute == 0) {
+            // The RTC wakes us up once per minute
+            motor_vibrate(75, 4);
+          }
+        }
+        break;
+      case MAIN_MENU_STATE:
+        // Return to watchface if in menu for more than one tick
+        if (alreadyInMenu) {
+          guiState = WATCHFACE_STATE;
+          showWatchFace(false);
+        } else {
+          alreadyInMenu = true;
+        }
+        break;
+      }
+      break;
+    case ESP_SLEEP_WAKEUP_EXT1: // button Press woke up the device
+      handleButtonPress();
+      break;
+    default: // reset
+      rtc.config(datetime);
+      bma_setup();
+      gmtOffset = settings.gmtOffset;
+      rtc.read(currentTime);
+      rtc.read(bootTime);
+      showWatchFace(false); // full update on reset
+      motor_vibrate(75, 4);
+      // For some reason, seems to be enabled on first boot
+      esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+      break;
+  }
+  deep_sleep();
+}
+
+
+void handleButtonPress() {
+  uint64_t wakeupBit = esp_sleep_get_ext1_wakeup_status();
+  // Menu Button
+  if (wakeupBit & MENU_BTN_MASK) {
+    if (guiState == WATCHFACE_STATE) { // enter menu state if coming from watch face
+      showMenu(menuIndex, false);
+    } else if (guiState == MAIN_MENU_STATE) { // if already in menu, then select menu item
+      guiState = APP_STATE;
+      switch (menuIndex) {
+        case 0:
+          timer_app_main();
+          showMenu(menuIndex, false);
+          break;
+        case 1:
+          about_app_main();
+          break;
+        case 2:
+          showBuzz();
+          break;
+        case 3:
+          accelerometer_app_main();
+          showMenu(menuIndex, false);
+          break;
+        case 4:
+          set_time_app_main();
+          showMenu(menuIndex, false);
+          break;
+        case 5:
+          setupWifi();
+          break;
+        case 6:
+          showUpdateFW();
+          break;
+        case 7:
+          showSyncNTP();
+          break;
+        default:
+          break;
+      }
+    } else if (guiState == FW_UPDATE_STATE) {
+      updateFWBegin();
+    }
+  }
+  // Back Button
+  else if (wakeupBit & BACK_BTN_MASK) {
+    if (guiState == MAIN_MENU_STATE) { // exit to watch face if already in menu
+      rtc.read(currentTime);
+      showWatchFace(false);
+    } else if (guiState == APP_STATE) {
+      showMenu(menuIndex, false); // exit to menu if already in app
+    } else if (guiState == FW_UPDATE_STATE) {
+      showMenu(menuIndex, false); // exit to menu if already in app
+    } else if (guiState == WATCHFACE_STATE) {
+      return;
+    }
+  }
+  // Up Button
+  else if (wakeupBit & UP_BTN_MASK) {
+    if (guiState == MAIN_MENU_STATE) { // increment menu index
+      menuIndex--;
+      if (menuIndex < 0) {
+        menuIndex = MENU_LENGTH - 1;
+      }
+      showMenu(menuIndex, true);
+    } else if (guiState == WATCHFACE_STATE) {
+      return;
+    }
+  }
+  // Down Button
+  else if (wakeupBit & DOWN_BTN_MASK) {
+    if (guiState == MAIN_MENU_STATE) { // decrement menu index
+      menuIndex++;
+      if (menuIndex > MENU_LENGTH - 1) {
+        menuIndex = 0;
+      }
+      showMenu(menuIndex, true);
+    } else if (guiState == WATCHFACE_STATE) {
+      return;
+    }
+  }
+
+  /***************** fast menu *****************/
+  bool timeout     = false;
+  long lastTimeout = millis();
+  pinMode(MENU_BTN_PIN, INPUT);
+  pinMode(BACK_BTN_PIN, INPUT);
+  pinMode(UP_BTN_PIN, INPUT);
+  pinMode(DOWN_BTN_PIN, INPUT);
+  while (!timeout) {
+    if (millis() - lastTimeout > 5000) {
+      timeout = true;
+    } else {
+      if (digitalRead(MENU_BTN_PIN) == 1) {
+        lastTimeout = millis();
+        if (guiState == MAIN_MENU_STATE) { // if already in menu, then select menu item
+          guiState = APP_STATE;
+          switch (menuIndex) {
+            case 0:
+              timer_app_main();
+              showMenu(menuIndex, false);
+              break;
+            case 1:
+              about_app_main();
+              break;
+            case 2:
+              showBuzz();
+              break;
+            case 3:
+              accelerometer_app_main();
+              showMenu(menuIndex, false);
+              break;
+            case 4:
+              set_time_app_main();
+              showMenu(menuIndex, false);
+              break;
+            case 5:
+              setupWifi();
+              break;
+            case 6:
+              showUpdateFW();
+              break;
+            case 7:
+              showSyncNTP();
+              break;
+            default:
+              break;
+          }
+        } else if (guiState == FW_UPDATE_STATE) {
+          updateFWBegin();
+        }
+      } else if (digitalRead(BACK_BTN_PIN) == 1) {
+        lastTimeout = millis();
+        if (guiState ==
+            MAIN_MENU_STATE) { // exit to watch face if already in menu
+          rtc.read(currentTime);
+          showWatchFace(false);
+          break; // leave loop
+        } else if (guiState == APP_STATE) {
+          showMenu(menuIndex, false); // exit to menu if already in app
+        } else if (guiState == FW_UPDATE_STATE) {
+          showMenu(menuIndex, false); // exit to menu if already in app
+        }
+      } else if (digitalRead(UP_BTN_PIN) == 1) {
+        lastTimeout = millis();
+        if (guiState == MAIN_MENU_STATE) { // increment menu index
+          menuIndex--;
+          if (menuIndex < 0) {
+            menuIndex = MENU_LENGTH - 1;
+          }
+          showFastMenu(menuIndex);
+        }
+      } else if (digitalRead(DOWN_BTN_PIN) == 1) {
+        lastTimeout = millis();
+        if (guiState == MAIN_MENU_STATE) { // decrement menu index
+          menuIndex++;
+          if (menuIndex > MENU_LENGTH - 1) {
+            menuIndex = 0;
+          }
+          showFastMenu(menuIndex);
+        }
+      }
+    }
+  }
+}
