@@ -9,7 +9,7 @@ void about_app_main() {
   display.setTextColor(GxEPD_WHITE);
   display.setCursor(0, 20);
 
-  display.print("Firmware: ");
+  display.print("Firm: ");
   display.println(FIRMWARE_NAME);
 
   display.print("Version: ");
@@ -38,5 +38,5 @@ void about_app_main() {
   display.print(minutes);
   display.println("m");
 
-  display.display(false); // full refresh
+  display.display(true); // full refresh
 }

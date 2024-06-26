@@ -188,13 +188,13 @@ void handleButtonPress() {
   // Menu Button
   if (wakeupBit & MENU_BTN_MASK) {
     if (gui_state == WATCHFACE_STATE) { // enter menu state if coming from watch face
-      show_menu(menuIndex, false);
+      show_menu(menuIndex, true);
     } else if (gui_state == MAIN_MENU_STATE) { // if already in menu, then select menu item
       set_gui_state(APP_STATE);
       switch (menuIndex) {
         case 0:
           timer_app_main();
-          show_menu(menuIndex, false);
+          show_menu(menuIndex, true);
           break;
         case 1:
           about_app_main();
@@ -204,11 +204,11 @@ void handleButtonPress() {
           break;
         case 3:
           accelerometer_app_main();
-          show_menu(menuIndex, false);
+          show_menu(menuIndex, true);
           break;
         case 4:
           set_time_app_main();
-          show_menu(menuIndex, false);
+          show_menu(menuIndex, true);
           break;
         case 5:
           setupWifi();
@@ -232,7 +232,7 @@ void handleButtonPress() {
       rtc.read(currentTime);
       showWatchFace(false);
     } else if (gui_state == APP_STATE) {
-      show_menu(menuIndex, false); // exit to menu if already in app
+      show_menu(menuIndex, true); // exit to menu if already in app
     } else if (gui_state == FW_UPDATE_STATE) {
       show_menu(menuIndex, false); // exit to menu if already in app
     } else if (gui_state == WATCHFACE_STATE) {
