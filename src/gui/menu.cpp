@@ -1,7 +1,28 @@
+#include "menu.h"
 #include "hardware/hardware.h"
 #include <Fonts/FreeMonoBold9pt7b.h>
 
 #define MENU_ITEM_HEIGHT  25
+
+const char *menuItems[] = {
+  "Timer",
+  "About",
+  "Vibrate Motor",
+  "Show Accelerometer",
+  "Set Time",
+  "Setup WiFi",
+  "Update Firmware",
+  "Sync NTP"
+};
+
+void show_menu(byte menuIndex, bool partialRefresh) {
+  display.setFullWindow();
+  display.fillScreen(GxEPD_BLACK);
+  draw_menu(menuItems, 7, menuIndex);
+  display.display(partialRefresh);
+  guiState = MAIN_MENU_STATE;
+  alreadyInMenu = false;
+}
 
 void draw_menu(const char* menu_items[], uint8_t menu_length, uint8_t menu_index) {
   display.setFont(&FreeMonoBold9pt7b);

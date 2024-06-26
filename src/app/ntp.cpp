@@ -48,7 +48,7 @@ void showSyncNTP() {
   }
   display.display(true); // full refresh
   delay(3000);
-  showMenu(menuIndex, false);
+  show_menu(menuIndex, false);
 }
 
 bool syncNTP() { // NTP sync - call after connecting to WiFi and

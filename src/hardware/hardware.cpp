@@ -5,6 +5,7 @@
 #include "config.h"
 #include "settings.h"
 #include "gui/gui.h"
+#include "gui/menu.h"
 #include "motor.h"
 
 #include "bma.h"
@@ -185,13 +186,13 @@ void handleButtonPress() {
   // Menu Button
   if (wakeupBit & MENU_BTN_MASK) {
     if (guiState == WATCHFACE_STATE) { // enter menu state if coming from watch face
-      showMenu(menuIndex, false);
+      show_menu(menuIndex, false);
     } else if (guiState == MAIN_MENU_STATE) { // if already in menu, then select menu item
       guiState = APP_STATE;
       switch (menuIndex) {
         case 0:
           timer_app_main();
-          showMenu(menuIndex, false);
+          show_menu(menuIndex, false);
           break;
         case 1:
           about_app_main();
@@ -201,11 +202,11 @@ void handleButtonPress() {
           break;
         case 3:
           accelerometer_app_main();
-          showMenu(menuIndex, false);
+          show_menu(menuIndex, false);
           break;
         case 4:
           set_time_app_main();
-          showMenu(menuIndex, false);
+          show_menu(menuIndex, false);
           break;
         case 5:
           setupWifi();
@@ -229,9 +230,9 @@ void handleButtonPress() {
       rtc.read(currentTime);
       showWatchFace(false);
     } else if (guiState == APP_STATE) {
-      showMenu(menuIndex, false); // exit to menu if already in app
+      show_menu(menuIndex, false); // exit to menu if already in app
     } else if (guiState == FW_UPDATE_STATE) {
-      showMenu(menuIndex, false); // exit to menu if already in app
+      show_menu(menuIndex, false); // exit to menu if already in app
     } else if (guiState == WATCHFACE_STATE) {
       return;
     }
@@ -243,7 +244,7 @@ void handleButtonPress() {
       if (menuIndex < 0) {
         menuIndex = MENU_LENGTH - 1;
       }
-      showMenu(menuIndex, true);
+      show_menu(menuIndex, true);
     } else if (guiState == WATCHFACE_STATE) {
       return;
     }
@@ -255,92 +256,9 @@ void handleButtonPress() {
       if (menuIndex > MENU_LENGTH - 1) {
         menuIndex = 0;
       }
-      showMenu(menuIndex, true);
+      show_menu(menuIndex, true);
     } else if (guiState == WATCHFACE_STATE) {
       return;
-    }
-  }
-
-  /***************** fast menu *****************/
-  bool timeout     = false;
-  long lastTimeout = millis();
-  pinMode(MENU_BTN_PIN, INPUT);
-  pinMode(BACK_BTN_PIN, INPUT);
-  pinMode(UP_BTN_PIN, INPUT);
-  pinMode(DOWN_BTN_PIN, INPUT);
-  while (!timeout) {
-    if (millis() - lastTimeout > 5000) {
-      timeout = true;
-    } else {
-      if (digitalRead(MENU_BTN_PIN) == 1) {
-        lastTimeout = millis();
-        if (guiState == MAIN_MENU_STATE) { // if already in menu, then select menu item
-          guiState = APP_STATE;
-          switch (menuIndex) {
-            case 0:
-              timer_app_main();
-              showMenu(menuIndex, false);
-              break;
-            case 1:
-              about_app_main();
-              break;
-            case 2:
-              showBuzz();
-              break;
-            case 3:
-              accelerometer_app_main();
-              showMenu(menuIndex, false);
-              break;
-            case 4:
-              set_time_app_main();
-              showMenu(menuIndex, false);
-              break;
-            case 5:
-              setupWifi();
-              break;
-            case 6:
-              showUpdateFW();
-              break;
-            case 7:
-              showSyncNTP();
-              break;
-            default:
-              break;
-          }
-        } else if (guiState == FW_UPDATE_STATE) {
-          updateFWBegin();
-        }
-      } else if (digitalRead(BACK_BTN_PIN) == 1) {
-        lastTimeout = millis();
-        if (guiState ==
-            MAIN_MENU_STATE) { // exit to watch face if already in menu
-          rtc.read(currentTime);
-          showWatchFace(false);
-          break; // leave loop
-        } else if (guiState == APP_STATE) {
-          showMenu(menuIndex, false); // exit to menu if already in app
-        } else if (guiState == FW_UPDATE_STATE) {
-          showMenu(menuIndex, false); // exit to menu if already in app
-        }
-      } else if (digitalRead(UP_BTN_PIN) == 1) {
-        lastTimeout = millis();
-        if (guiState == MAIN_MENU_STATE) { // increment menu index
-          menuIndex--;
-          if (menuIndex < 0) {
-            menuIndex = MENU_LENGTH - 1;
-          }
-          showFastMenu(menuIndex);
-        }
-      } else if (digitalRead(DOWN_BTN_PIN) == 1) {
-        lastTimeout = millis();
-        if (guiState == MAIN_MENU_STATE) { // decrement menu index
-          menuIndex++;
-          if (menuIndex > MENU_LENGTH - 1) {
-            menuIndex = 0;
-          }
-          showFastMenu(menuIndex);
-        }
-      }
     }
   }
 }

@@ -6,6 +6,7 @@
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include "hardware/ble.h"
 #include "hardware/wifi.h"
+#include "gui/menu.h"
 
 void showUpdateFW() {
   display.setFullWindow();
@@ -110,5 +111,5 @@ void updateFWBegin() {
   // turn off radios
   WiFi.mode(WIFI_OFF);
   btStop();
-  showMenu(menuIndex, false);
+  show_menu(menuIndex, false);
 }
