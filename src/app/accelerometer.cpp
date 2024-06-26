@@ -15,8 +15,6 @@ void accelerometer_app_main() {
   long previousMillis = 0;
   long interval       = 200;
 
-  guiState = APP_STATE;
-
   pinMode(BACK_BTN_PIN, INPUT);
 
   while (1) {

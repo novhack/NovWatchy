@@ -7,6 +7,7 @@
 #include "hardware/ble.h"
 #include "hardware/wifi.h"
 #include "gui/menu.h"
+#include "gui/state.h"
 
 void showUpdateFW() {
   display.setFullWindow();
@@ -25,7 +26,7 @@ void showUpdateFW() {
   display.println("Keep USB powered");
   display.display(false); // full refresh
 
-  guiState = FW_UPDATE_STATE;
+  set_gui_state(FW_UPDATE_STATE);
 }
 
 void updateFWBegin() {

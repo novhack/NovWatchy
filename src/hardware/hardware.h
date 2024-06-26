@@ -11,7 +11,7 @@ extern GxEPD2_BW<WatchyDisplay, WatchyDisplay::HEIGHT> display;
 
 extern tmElements_t currentTime;
 
-extern RTC_DATA_ATTR int guiState;
+
 extern RTC_DATA_ATTR int menuIndex;
 extern RTC_DATA_ATTR bool WIFI_CONFIGURED;
 extern RTC_DATA_ATTR bool BLE_CONFIGURED;
@@ -33,7 +33,6 @@ void hardware_setup(String datetime = "");
 
 void handleButtonPress();
 
-extern RTC_DATA_ATTR int guiState;
 extern RTC_DATA_ATTR int menuIndex;
 extern RTC_DATA_ATTR bool WIFI_CONFIGURED;
 extern RTC_DATA_ATTR bool BLE_CONFIGURED;

@@ -5,6 +5,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
+#include "gui/state.h"
 
 void setupWifi() {
   display.epd2.setBusyCallback(0); // temporarily disable lightsleep on busy
@@ -34,7 +35,7 @@ void setupWifi() {
   btStop();
   // enable lightsleep on busy
   display.epd2.setBusyCallback(WatchyDisplay::busyCallback);
-  guiState = APP_STATE;
+  set_gui_state(APP_STATE);
 }
 
 void _configModeCallback(WiFiManager *myWiFiManager) {

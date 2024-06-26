@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "face.h"
 #include "menu.h"
+#include "state.h"
 #include "hardware/hardware.h"
 #include <GxEPD2_BW.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
@@ -11,7 +12,7 @@ void showWatchFace(bool partialRefresh) {
   display.epd2.asyncPowerOn();
   drawWatchFace();
   display.display(partialRefresh); // partial refresh
-  guiState = WATCHFACE_STATE;
+  set_gui_state(WATCHFACE_STATE);
 }
 
 /*

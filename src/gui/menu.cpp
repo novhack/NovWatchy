@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "state.h"
 #include "hardware/hardware.h"
 #include <Fonts/FreeMonoBold9pt7b.h>
 
@@ -20,7 +21,7 @@ void show_menu(byte menuIndex, bool partialRefresh) {
   display.fillScreen(GxEPD_BLACK);
   draw_menu(menuItems, 7, menuIndex);
   display.display(partialRefresh);
-  guiState = MAIN_MENU_STATE;
+  set_gui_state(MAIN_MENU_STATE);
   alreadyInMenu = false;
 }
 

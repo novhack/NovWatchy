@@ -6,6 +6,7 @@
 #include "settings.h"
 #include "gui/gui.h"
 #include "gui/menu.h"
+#include "gui/state.h"
 #include "motor.h"
 
 #include "bma.h"
@@ -25,7 +26,6 @@ GxEPD2_BW<WatchyDisplay, WatchyDisplay::HEIGHT> display(WatchyDisplay{});
 int weatherIntervalCounter = -1;
 long gmtOffset = 0;
 bool alreadyInMenu = true;
-int guiState = WATCHFACE_STATE;
 tmElements_t bootTime = {
   .Second = 0, 
   .Minute = 0,
@@ -141,7 +141,7 @@ void hardware_setup(String datetime) {
   switch (wakeup_reason) {
     case ESP_SLEEP_WAKEUP_EXT0: // RTC Alarm
       rtc.read(currentTime);
-      switch (guiState) {
+      switch (get_gui_state()) {
       case WATCHFACE_STATE:
         showWatchFace(true); // partial updates on tick
         if (settings.vibrateOClock) {
@@ -154,7 +154,7 @@ void hardware_setup(String datetime) {
       case MAIN_MENU_STATE:
         // Return to watchface if in menu for more than one tick
         if (alreadyInMenu) {
-          guiState = WATCHFACE_STATE;
+          set_gui_state(WATCHFACE_STATE);
           showWatchFace(false);
         } else {
           alreadyInMenu = true;
@@ -183,12 +183,14 @@ void hardware_setup(String datetime) {
 
 void handleButtonPress() {
   uint64_t wakeupBit = esp_sleep_get_ext1_wakeup_status();
+  int8_t gui_state = get_gui_state();
+
   // Menu Button
   if (wakeupBit & MENU_BTN_MASK) {
-    if (guiState == WATCHFACE_STATE) { // enter menu state if coming from watch face
+    if (gui_state == WATCHFACE_STATE) { // enter menu state if coming from watch face
       show_menu(menuIndex, false);
-    } else if (guiState == MAIN_MENU_STATE) { // if already in menu, then select menu item
-      guiState = APP_STATE;
+    } else if (gui_state == MAIN_MENU_STATE) { // if already in menu, then select menu item
+      set_gui_state(APP_STATE);
       switch (menuIndex) {
         case 0:
           timer_app_main();
@@ -220,44 +222,44 @@ void handleButtonPress() {
         default:
           break;
       }
-    } else if (guiState == FW_UPDATE_STATE) {
+    } else if (gui_state == FW_UPDATE_STATE) {
       updateFWBegin();
     }
   }
   // Back Button
   else if (wakeupBit & BACK_BTN_MASK) {
-    if (guiState == MAIN_MENU_STATE) { // exit to watch face if already in menu
+    if (gui_state == MAIN_MENU_STATE) { // exit to watch face if already in menu
       rtc.read(currentTime);
       showWatchFace(false);
-    } else if (guiState == APP_STATE) {
+    } else if (gui_state == APP_STATE) {
       show_menu(menuIndex, false); // exit to menu if already in app
-    } else if (guiState == FW_UPDATE_STATE) {
+    } else if (gui_state == FW_UPDATE_STATE) {
       show_menu(menuIndex, false); // exit to menu if already in app
-    } else if (guiState == WATCHFACE_STATE) {
+    } else if (gui_state == WATCHFACE_STATE) {
       return;
     }
   }
   // Up Button
   else if (wakeupBit & UP_BTN_MASK) {
-    if (guiState == MAIN_MENU_STATE) { // increment menu index
+    if (gui_state == MAIN_MENU_STATE) { // increment menu index
       menuIndex--;
       if (menuIndex < 0) {
         menuIndex = MENU_LENGTH - 1;
       }
       show_menu(menuIndex, true);
-    } else if (guiState == WATCHFACE_STATE) {
+    } else if (gui_state == WATCHFACE_STATE) {
       return;
     }
   }
   // Down Button
   else if (wakeupBit & DOWN_BTN_MASK) {
-    if (guiState == MAIN_MENU_STATE) { // decrement menu index
+    if (gui_state == MAIN_MENU_STATE) { // decrement menu index
       menuIndex++;
       if (menuIndex > MENU_LENGTH - 1) {
         menuIndex = 0;
       }
       show_menu(menuIndex, true);
-    } else if (guiState == WATCHFACE_STATE) {
+    } else if (gui_state == WATCHFACE_STATE) {
       return;
     }
   }
