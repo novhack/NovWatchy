@@ -6,6 +6,7 @@
 #include <BLEUtils.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include "gui/state.h"
+#include "rtc_sram.h"
 
 void setupWifi() {
   display.epd2.setBusyCallback(0); // temporarily disable lightsleep on busy

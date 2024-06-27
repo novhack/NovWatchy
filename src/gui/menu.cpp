@@ -1,6 +1,7 @@
 #include "menu.h"
 #include "state.h"
 #include "hardware/hardware.h"
+#include "hardware/rtc_sram.h"
 #include <Fonts/FreeMonoBold9pt7b.h>
 
 #define MENU_ITEM_HEIGHT  25

@@ -8,6 +8,7 @@
 #include "hardware/wifi.h"
 #include "gui/menu.h"
 #include "gui/state.h"
+#include "hardware/rtc_sram.h"
 
 void showUpdateFW() {
   display.setFullWindow();

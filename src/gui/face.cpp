@@ -4,6 +4,7 @@
 
 #include "hardware/hardware.h"
 #include "hardware/bma.h"
+#include "hardware/rtc_sram.h"
 #include "gui/fonts/DSEG7_Classic_Bold_53.h"
 #include "gui/fonts/Seven_Segment10pt7b.h"
 #include "gui/fonts/DSEG7_Classic_Bold_25.h"

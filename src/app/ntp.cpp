@@ -6,6 +6,7 @@
 #include "gui/menu.h"
 #include "gui/gui.h"
 #include "settings.h"
+#include "hardware/rtc_sram.h"
 
 void showSyncNTP() {
   display.setFullWindow();

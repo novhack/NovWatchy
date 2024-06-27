@@ -1,6 +1,5 @@
 #include "state.h"
-
-uint8_t gui_state = WATCHFACE_STATE;
+#include "hardware/rtc_sram.h"
 
 uint8_t get_gui_state() {
     return gui_state;

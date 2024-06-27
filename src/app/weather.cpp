@@ -6,6 +6,7 @@
 #include "hardware/wifi.h"
 #include <Arduino_JSON.h>
 #include "hardware/bma.h"
+#include "hardware/rtc_sram.h"
 #include "ntp.h"
 
 weatherData getWeatherData() {
