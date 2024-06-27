@@ -39,19 +39,19 @@ void drawTime(){
     display.setCursor(5, 53+5);
     int displayHour;
     if (HOUR_12_24 == 12) {
-        displayHour = ((currentTime.Hour+11)%12)+1;
+        displayHour = ((current_time.Hour+11)%12)+1;
     } else {
-        displayHour = currentTime.Hour;
+        displayHour = current_time.Hour;
     }
     if (displayHour < 10){
         display.print("0");
     }
     display.print(displayHour);
     display.print(":");
-    if (currentTime.Minute < 10) {
+    if (current_time.Minute < 10) {
         display.print("0");
     }
-    display.println(currentTime.Minute);
+    display.println(current_time.Minute);
 }
 
 void drawDate(){
@@ -60,30 +60,30 @@ void drawDate(){
     int16_t  x1, y1;
     uint16_t w, h;
 
-    String dayOfWeek = dayStr(currentTime.Wday);
+    String dayOfWeek = dayStr(current_time.Wday);
     display.getTextBounds(dayOfWeek, 5, 85, &x1, &y1, &w, &h);
-    if (currentTime.Wday == 4) {
+    if (current_time.Wday == 4) {
         w = w - 5;
     }
     display.setCursor(85 - w, 85);
     display.println(dayOfWeek);
 
-    String month = monthShortStr(currentTime.Month);
+    String month = monthShortStr(current_time.Month);
     display.getTextBounds(month, 60, 110, &x1, &y1, &w, &h);
     display.setCursor(85 - w, 110);
     display.println(month);
 
     display.setFont(&DSEG7_Classic_Bold_25);
     display.setCursor(5, 120);
-    if(currentTime.Day < 10){
+    if(current_time.Day < 10){
     display.print("0");
     }
-    display.println(currentTime.Day);
+    display.println(current_time.Day);
 }
 
 void drawSteps(){
     // reset step counter at midnight
-    if (currentTime.Hour == 0 && currentTime.Minute == 0){
+    if (current_time.Hour == 0 && current_time.Minute == 0){
       sensor.resetStepCounter();
     }
     uint32_t stepCount = sensor.getCounter();

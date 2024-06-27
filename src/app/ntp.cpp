@@ -23,24 +23,24 @@ void showSyncNTP() {
       display.println("NTP Sync Success\n");
       display.println("Current Time Is:");
 
-      rtc.read(currentTime);
+      rtc.read(current_time);
 
-      display.print(tmYearToCalendar(currentTime.Year));
+      display.print(tmYearToCalendar(current_time.Year));
       display.print("/");
-      display.print(currentTime.Month);
+      display.print(current_time.Month);
       display.print("/");
-      display.print(currentTime.Day);
+      display.print(current_time.Day);
       display.print(" - ");
 
-      if (currentTime.Hour < 10) {
+      if (current_time.Hour < 10) {
         display.print("0");
       }
-      display.print(currentTime.Hour);
+      display.print(current_time.Hour);
       display.print(":");
-      if (currentTime.Minute < 10) {
+      if (current_time.Minute < 10) {
         display.print("0");
       }
-      display.println(currentTime.Minute);
+      display.println(current_time.Minute);
     } else {
       display.println("NTP Sync Failed");
     }

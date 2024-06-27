@@ -1,6 +1,7 @@
 #include "about.h"
 #include "hardware/hardware.h"
 #include <Fonts/FreeMonoBold9pt7b.h>
+#include "hardware/rtc_sram.h"
 
 void about_app_main() {
   display.setFullWindow();
@@ -24,9 +25,9 @@ void about_app_main() {
   display.println("V");
 
   display.print("Uptime: ");
-  rtc.read(currentTime);
+  rtc.read(current_time);
   time_t b = makeTime(bootTime);
-  time_t c = makeTime(currentTime);
+  time_t c = makeTime(current_time);
   int totalSeconds = c-b;
   int minutes = (totalSeconds % 3600) / 60;
   int hours = (totalSeconds % 86400) / 3600;

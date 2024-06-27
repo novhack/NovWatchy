@@ -21,15 +21,6 @@ uint32_t lastIPAddress = 0;
 char lastSSID[30] = "";
 bool WIFI_CONFIGURED = false;
 bool BLE_CONFIGURED = false;
-tmElements_t currentTime = {
-  .Second = 0, 
-  .Minute = 0,
-  .Hour = 0,
-  .Wday = 0,
-  .Day = 0,
-  .Month = 0,
-  .Year = 0,
-};
 weatherData currentWeather = {
   .temperature = 0,
   .weatherConditionCode = 0,
