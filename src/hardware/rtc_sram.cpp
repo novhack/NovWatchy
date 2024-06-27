@@ -1,5 +1,5 @@
 #include "rtc_sram.h"
-#include "gui/state.h"
+#include "gui/gui.h"
 
 // Initial declarations of persistant memory
 // Only run after hard reset

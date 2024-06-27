@@ -14,5 +14,4 @@ void showBuzz() {
   display.println("Buzz!");
   display.display(false); // full refresh
   motor_vibrate();
-  show_menu(menuIndex, false);
 }

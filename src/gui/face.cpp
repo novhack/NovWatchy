@@ -1,11 +1,10 @@
 #include "face.h"
 
 #include <floatToString.h>
-
+#include "gui.h"
 #include "hardware/hardware.h"
 #include "hardware/bma.h"
 #include "hardware/rtc_sram.h"
-#include "state.h"
 #include "fonts/DSEG7_Classic_Bold_53.h"
 #include "fonts/Seven_Segment10pt7b.h"
 #include "fonts/DSEG7_Classic_Bold_25.h"
@@ -28,7 +27,7 @@ void showWatchFace(bool partialRefresh) {
   display.epd2.asyncPowerOn();
   drawWatchFace();
   display.display(partialRefresh); // partial refresh
-  set_gui_state(WATCHFACE_STATE);
+  gui_state = WATCHFACE_STATE;
 }
 
 

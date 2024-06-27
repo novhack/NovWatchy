@@ -1,11 +1,11 @@
 #include "wifi.h"
 #include "hardware/hardware.h"
+#include "gui/gui.h"
 #include <BLE2902.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
-#include "gui/state.h"
 #include "rtc_sram.h"
 
 void setupWifi() {
@@ -36,7 +36,7 @@ void setupWifi() {
   btStop();
   // enable lightsleep on busy
   display.epd2.setBusyCallback(WatchyDisplay::busyCallback);
-  set_gui_state(APP_STATE);
+  gui_state = APP_STATE;
 }
 
 void _configModeCallback(WiFiManager *myWiFiManager) {
