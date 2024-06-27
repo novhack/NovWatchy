@@ -5,12 +5,13 @@
 #include "hardware/hardware.h"
 #include "hardware/bma.h"
 #include "hardware/rtc_sram.h"
-#include "gui/fonts/DSEG7_Classic_Bold_53.h"
-#include "gui/fonts/Seven_Segment10pt7b.h"
-#include "gui/fonts/DSEG7_Classic_Bold_25.h"
-#include "gui/fonts/DSEG7_Classic_Regular_39.h"
+#include "state.h"
+#include "fonts/DSEG7_Classic_Bold_53.h"
+#include "fonts/Seven_Segment10pt7b.h"
+#include "fonts/DSEG7_Classic_Bold_25.h"
+#include "fonts/DSEG7_Classic_Regular_39.h"
 #include "app/weather.h"
-#include "gui/icons.h"
+#include "icons.h"
 
 #define DARKMODE true
 
@@ -19,6 +20,17 @@ const uint8_t BATTERY_SEGMENT_HEIGHT = 11;
 const uint8_t BATTERY_SEGMENT_SPACING = 9;
 const uint8_t WEATHER_ICON_WIDTH = 48;
 const uint8_t WEATHER_ICON_HEIGHT = 32;
+
+
+void showWatchFace(bool partialRefresh) {
+  display.setFullWindow();
+  // At this point it is sure we are going to update
+  display.epd2.asyncPowerOn();
+  drawWatchFace();
+  display.display(partialRefresh); // partial refresh
+  set_gui_state(WATCHFACE_STATE);
+}
+
 
 void drawWatchFace(){
     display.fillScreen(DARKMODE ? GxEPD_BLACK : GxEPD_WHITE);

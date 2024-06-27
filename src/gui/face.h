@@ -6,6 +6,7 @@
 #include "fonts/DSEG7_Classic_Regular_39.h"
 #include "icons.h"
 
+void showWatchFace(bool partialRefresh);
 void drawWatchFace();
 void drawTime();
 void drawDate();

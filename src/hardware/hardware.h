@@ -7,14 +7,21 @@
 
 extern GxEPD2_BW<WatchyDisplay, WatchyDisplay::HEIGHT> display;
 extern WatchyRTC rtc;
-
 extern tmElements_t current_time;
+
+// Filled up after every deep sleep wake up
 extern esp_sleep_wakeup_cause_t wake_up_reason;
+extern uint64_t wake_up_button_bit;
 
 /**
  * Runs every time device is woken up from the deep sleep
  */
 void hardware_setup(String datetime = "");
+
+/**
+ * Called after device is first turned on or restarted
+ */
+void boot(String datetime);
 
 /**
  * Returns Watchy board number
@@ -30,18 +37,3 @@ float get_battery_voltage();
  * Puts device into deep sleep
  */
 void deep_sleep();
-
-/**
- * Called after device is woken up with RTC event (every minute)
- */
-void rtc_wakeup();
-
-/**
- * Called after device is woken up with button input
- */
-void button_wakeup();
-
-/**
- * Called after device is first turned on or restarted
- */
-void boot(String datetime);
