@@ -2,7 +2,7 @@
 
 // Versioning
 #define FIRMWARE_NAME "NovWatchy"
-#define WATCHY_LIB_VER "0.1.0"
+#define FIRMWARE_VERSION "0.2.0"
 
 // Watch 20
 #define UP_BTN_PIN 35

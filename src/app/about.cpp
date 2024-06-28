@@ -14,7 +14,7 @@ void about_app_main() {
   display.println(FIRMWARE_NAME);
 
   display.print("Version: ");
-  display.println(WATCHY_LIB_VER);
+  display.println(FIRMWARE_VERSION);
 
   display.print("Board: v");
   display.println(get_board_revision());
