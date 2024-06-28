@@ -46,3 +46,6 @@ weatherData currentWeather = {
     .Year = 0,
   },
 };
+
+int8_t timer_hour = 0;
+int8_t timer_minute = 1;

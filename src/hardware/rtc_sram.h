@@ -22,3 +22,7 @@ extern RTC_DATA_ATTR bool BLE_CONFIGURED;
 extern RTC_DATA_ATTR tmElements_t bootTime;
 extern RTC_DATA_ATTR uint32_t lastIPAddress;
 extern RTC_DATA_ATTR char lastSSID[30];
+
+// Apps
+extern RTC_DATA_ATTR int8_t timer_hour;
+extern RTC_DATA_ATTR int8_t timer_minute;

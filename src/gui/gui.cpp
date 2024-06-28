@@ -87,7 +87,6 @@ void menu_button_handler() {
       switch (menuIndex) {
         case 0:
           timer_app_main();
-          show_menu(menuIndex, true);
           break;
         case 1:
           about_app_main();

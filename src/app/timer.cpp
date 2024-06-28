@@ -7,14 +7,13 @@
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include "hardware/button.h"
 #include "hardware/hardware.h"
+#include "hardware/motor.h"
+#include "hardware/rtc_sram.h"
 
 void timer_app_main() {
   display.setFullWindow();
 
   set_buttons_pins_as_inputs();
-
-  int8_t hour = 0;
-  int8_t minute = 0;
 
   int8_t set_index = SET_HOUR;
   int8_t blink = 0;
@@ -34,7 +33,7 @@ void timer_app_main() {
         set_index++;
       } else {
         // Start timer and show countdown screen
-        timer_start((hour * 60 + minute) * 60);
+        timer_start((timer_hour * 60 + timer_minute) * 60);
         // After timer finished break the app loop
         break;
       }
@@ -46,10 +45,10 @@ void timer_app_main() {
       blink = 1;
       switch (set_index) {
         case SET_HOUR:
-          hour == 23 ? (hour = 0) : hour++;
+          timer_hour == 23 ? (timer_hour = 0) : timer_hour++;
           break;
         case SET_MINUTE:
-          minute == 59 ? (minute = 0) : minute++;
+          timer_minute == 59 ? (timer_minute = 0) : timer_minute++;
           break;
         default:
           break;
@@ -60,10 +59,10 @@ void timer_app_main() {
       blink = 1;
       switch (set_index) {
         case SET_HOUR:
-          hour == 0 ? (hour = 23) : hour--;
+          timer_hour == 0 ? (timer_hour = 23) : timer_hour--;
           break;
         case SET_MINUTE:
-          minute == 0 ? (minute = 59) : minute--;
+          timer_minute == 0 ? (timer_minute = 59) : timer_minute--;
           break;
         default:
           break;
@@ -79,10 +78,10 @@ void timer_app_main() {
     if (set_index == SET_HOUR) { // blink hour digits
       display.setTextColor(blink ? GxEPD_WHITE : GxEPD_BLACK);
     }
-    if (hour < 10) {
+    if (timer_hour < 10) {
       display.print("0");
     }
-    display.print(hour);
+    display.print(timer_hour);
 
     display.setTextColor(GxEPD_WHITE);
     display.print(":");
@@ -91,10 +90,10 @@ void timer_app_main() {
     if (set_index == SET_MINUTE) { // blink minute digits
       display.setTextColor(blink ? GxEPD_WHITE : GxEPD_BLACK);
     }
-    if (minute < 10) {
+    if (timer_minute < 10) {
       display.print("0");
     }
-    display.print(minute);
+    display.print(timer_minute);
 
     display.display(true); // partial refresh
   }
@@ -115,25 +114,26 @@ void timer_start(uint32_t seconds) {
     display.setTextColor(GxEPD_WHITE);
     display.setFont(&FreeMonoBold9pt7b);
     display.setCursor(5, 80);
-    display.println("Show timer: ");
-    display.println(seconds);
-    display.println(timestamp_diff);
+    display.println("Remaining time: ");
+
+    // Maximum amount of minutes is 1440 (HH:mm input format)
+    char mmss_string[8] = "0000:00";
+    seconds_to_string(uint32_t(seconds - timestamp_diff), mmss_string);
+    display.println(mmss_string);
 
     if (timestamp_diff >= seconds) {
+      display.fillScreen(GxEPD_BLACK);
       display.println("Timer finished!");
-      pinMode(VIB_MOTOR_PIN, OUTPUT);
-      bool motorOn = false;
-      for (int i = 0; i < 20; i++) {
-        motorOn = !motorOn;
-        digitalWrite(VIB_MOTOR_PIN, motorOn);
-        if (is_back_button_pressed()) {
-          break;
-        }
-        delay(100);
-      }
+      display.display(true);
+      motor_vibrate(200, 10);
       break;
     }
     display.display(true);
     delay(500);
   }
+}
+
+void seconds_to_string(uint32_t seconds, char* mmss_string) {
+  uint32_t minutes = seconds / 60;
+  sprintf(mmss_string, "%02d:%02d", minutes, seconds % 60);
 }
