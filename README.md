@@ -16,5 +16,10 @@ Changes done:
     - The adjustment amount is recalculated with every daily NTP sync
 - Added more detailed battery status
     - Voltage representing 100% recalculated with every full charge
-    - Minimum voltage experimentally measured as 3.3V
+    - Minimum voltage experimentally measured as 3.2V
     - Added time estimates for charging and discharging
+- Added outside temperature estimate
+    - Only compatible with custom case with holes for better airflow
+    - Requires the user input of correct outside temperature over the runtime of the watch
+    - Creates a corrective curve to internal BMA423 temperature to better align the displayed temperature to outside temperature
+    - Can never be accurate (especially if the watch is exposed to sunlight) but could be good enough
