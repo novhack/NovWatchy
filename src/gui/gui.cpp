@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "menu_items.h"
 #include <GxEPD2_BW.h>
 
 #include "face.h"
@@ -8,16 +9,7 @@
 #include "hardware/hardware.h"
 #include "hardware/motor.h"
 #include "hardware/rtc_sram.h"
-#include "hardware/wifi.h"
-
-#include "app/about.h"
-#include "app/accelerometer.h"
-#include "app/buzz.h"
-#include "app/ntp.h"
-#include "app/set_time.h"
-#include "app/timer.h"
 #include "app/update.h"
-#include "app/weather.h"
 
 void gui_setup() {
   switch (wake_up_reason) {
@@ -75,6 +67,19 @@ void button_wakeup() {
   }
 }
 
+void handle_menu(int menu_index) {
+  if (menu_index <= 0 || menu_index >= MENU_LENGTH) {
+    return;
+  }
+
+  menu_item_t menu_item = menu_items[menu_index];
+  menu_item.handler();
+
+  if(menu_item.exit_after_handler) {
+    show_menu(menu_index, menu_item.partial_refresh);
+  }
+}
+
 void menu_button_handler() {
   switch (gui_state) {
     case WATCHFACE_STATE:
@@ -84,37 +89,7 @@ void menu_button_handler() {
     case MAIN_MENU_STATE:
       // If already in menu, then select menu item
       gui_state = APP_STATE;
-      switch (menuIndex) {
-        case 0:
-          timer_app_main();
-          break;
-        case 1:
-          about_app_main();
-          break;
-        case 2:
-          showBuzz();
-          show_menu(menuIndex, false);
-          break;
-        case 3:
-          accelerometer_app_main();
-          show_menu(menuIndex, true);
-          break;
-        case 4:
-          set_time_app_main();
-          show_menu(menuIndex, true);
-          break;
-        case 5:
-          setupWifi();
-          break;
-        case 6:
-          showUpdateFW();
-          break;
-        case 7:
-          showSyncNTP();
-          break;
-        default:
-          break;
-      }
+      handle_menu(menuIndex);
       break;
     case FW_UPDATE_STATE:
       updateFWBegin();

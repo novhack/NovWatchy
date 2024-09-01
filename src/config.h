@@ -19,8 +19,8 @@
 #define WIFI_AP_SSID    "Watchy AP"
 
 // menu
-#define MENU_HEIGHT     25
-#define MENU_LENGTH     7
+#define MENU_ITEM_HEIGHT  25
+#define MENU_LENGTH       8
 
 // set time
 #define SET_HOUR   0
