@@ -68,7 +68,7 @@ void button_wakeup() {
 }
 
 void handle_menu(int menu_index) {
-  if (menu_index <= 0 || menu_index >= MENU_LENGTH) {
+  if (menu_index < 0 || menu_index >= MENU_LENGTH) {
     return;
   }
 
