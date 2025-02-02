@@ -49,3 +49,4 @@ weatherData currentWeather = {
 
 int8_t timer_hour = 0;
 int8_t timer_minute = 1;
+uint32_t timer_saved_settings[TIMER_SAVED_SETTINGS_COUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
