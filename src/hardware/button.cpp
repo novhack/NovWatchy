@@ -10,20 +10,51 @@ void set_buttons_pins_as_inputs() {
     pinMode(BACK_BTN_PIN, INPUT);
 }
 
+const int debounceDelay = 50;
+
+unsigned long lastDebounceTimeBack = 0;
+bool lastButtonStateBack = LOW;
+
+unsigned long lastDebounceTimeMenu = 0;
+bool lastButtonStateMenu = LOW;
+
+unsigned long lastDebounceTimeUp = 0;
+bool lastButtonStateUp = LOW;
+
+unsigned long lastDebounceTimeDown = 0;
+bool lastButtonStateDown = LOW;
+
+bool debounceButton(int pin, unsigned long &lastDebounceTime, bool &lastButtonState) {
+    bool currentButtonState = digitalRead(pin);
+    if (currentButtonState != lastButtonState) {
+        lastDebounceTime = millis();
+    }
+
+    if ((millis() - lastDebounceTime) > debounceDelay) {
+        if (currentButtonState == HIGH) {
+            lastButtonState = currentButtonState;
+            return true;
+        }
+    }
+
+    lastButtonState = currentButtonState;
+    return false;
+}
+
 bool is_back_button_pressed() {
-    return digitalRead(BACK_BTN_PIN) == 1;
+    return debounceButton(BACK_BTN_PIN, lastDebounceTimeBack, lastButtonStateBack);
 }
 
 bool is_menu_button_pressed() {
-    return digitalRead(MENU_BTN_PIN) == 1;
+    return debounceButton(MENU_BTN_PIN, lastDebounceTimeMenu, lastButtonStateMenu);
 }
 
 bool is_up_button_pressed() {
-    return digitalRead(UP_BTN_PIN) == 1;
+    return debounceButton(UP_BTN_PIN, lastDebounceTimeUp, lastButtonStateUp);
 }
 
 bool is_down_button_pressed() {
-    return digitalRead(DOWN_BTN_PIN) == 1;
+    return debounceButton(DOWN_BTN_PIN, lastDebounceTimeDown, lastButtonStateDown);
 }
 
 bool are_top_buttons_pressed() {
