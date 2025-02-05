@@ -105,7 +105,7 @@ bool handle_duration_setup_inputs() {
     } else {
       // Start timer and show countdown page
       state.seconds = (timer_state.timer_hour * 60 + timer_state.timer_minute) * 60;
-      pushToFront(timer_state.timer_saved_settings, state.seconds);
+      push_to_front_unique(timer_state.timer_saved_settings, state.seconds);
       start_timer();
       state.timer_gui_state = TIMER_COUNTDOWN_STATE;
     }
@@ -149,7 +149,7 @@ bool handle_saved_duration_state_inputs() {
   }
   else if (is_menu_button_pressed()) {
     state.seconds = timer_state.timer_saved_settings[state.menu_index];
-    pushToFront(timer_state.timer_saved_settings, state.seconds);
+    push_to_front_unique(timer_state.timer_saved_settings, state.seconds);
     start_timer();
     state.timer_gui_state = TIMER_COUNTDOWN_STATE;
   }
@@ -169,7 +169,7 @@ void display_duration_setup() {
 
 void display_saved_duration() {
   display.fillRect(0, 75, DISPLAY_WIDTH, 125, GxEPD_BLACK);
-  draw_menu(timer_menu_items, state.menu_index, 75, 5);
+  draw_menu(timer_menu_items, TIMER_SAVED_SETTINGS_COUNT, state.menu_index, 75, 5);
 }
 
 void start_timer() {
@@ -206,9 +206,23 @@ void calc_duration() {
   }
 }
 
-void pushToFront(uint32_t array[], uint32_t new_value) {
+void push_to_front_unique(uint32_t array[], uint32_t new_value) {
+
+    int found_index = -1;
+    for (int i = 0; i < TIMER_SAVED_SETTINGS_COUNT; i++) {
+      if (array[i] == new_value) {
+        found_index = i;
+        break;
+      }
+    }
+
+    int cut_off_index = TIMER_SAVED_SETTINGS_COUNT - 1;
+    if (found_index != -1) {
+      cut_off_index = found_index;
+    }
+
     // Shift all elements to the right by one position
-    for (int i = TIMER_SAVED_SETTINGS_COUNT - 1; i > 0; i--) {
+    for (int i = cut_off_index; i > 0; i--) {
         array[i] = array[i - 1];
     }
     // Place the new value at the front

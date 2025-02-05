@@ -57,4 +57,4 @@ void display_duration_setup();
 
 void display_saved_duration();
 
-void pushToFront(uint32_t array[], uint32_t new_value);
+void push_to_front_unique(uint32_t array[], uint32_t new_value);
