@@ -67,7 +67,7 @@ void timer_app_main() {
     }
 
     // Only redraw if app state changed
-    if (compare_struct(&old_state, &state, sizeof(TimerState))) {
+    if (!compare_struct(&old_state, &state, sizeof(TimerState))) {
       display.display(true); // partial refresh
     }
 
