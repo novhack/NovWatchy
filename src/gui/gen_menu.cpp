@@ -30,7 +30,7 @@ void draw_menu(menu_item_t menu_items[], uint8_t menu_index, uint8_t y_offset, u
     uint8_t m_index = i + top_window;
 
     yPos = MENU_ITEM_HEIGHT * i + y_offset;
-    display.setCursor(0, yPos);
+    display.setCursor(5, yPos);
     display.getTextBounds(menu_items[m_index].title, 0, yPos, &x1, &y1, &w, &h);
 
     if (m_index == menu_index) {
@@ -40,7 +40,7 @@ void draw_menu(menu_item_t menu_items[], uint8_t menu_index, uint8_t y_offset, u
       display.setTextColor(GxEPD_WHITE);
     }
 
-    display.setCursor(0, yPos + MENU_ITEM_HEIGHT - (h / 2));
+    display.setCursor(5, yPos + MENU_ITEM_HEIGHT - (h / 2));
     display.println(menu_items[m_index].title);
   }
 }

@@ -7,6 +7,7 @@
 #include <Arduino.h>
 #include "rtc.h"
 #include "app/weather.h"
+#include "app/timer.h"
 #include "config.h"
 
 // GUI
@@ -25,6 +26,4 @@ extern RTC_DATA_ATTR uint32_t lastIPAddress;
 extern RTC_DATA_ATTR char lastSSID[30];
 
 // Apps
-extern RTC_DATA_ATTR int8_t timer_hour;
-extern RTC_DATA_ATTR int8_t timer_minute;
-extern RTC_DATA_ATTR uint32_t timer_saved_settings[TIMER_SAVED_SETTINGS_COUNT];
+extern RTC_DATA_ATTR PersistentTimerState timer_state;

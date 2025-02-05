@@ -23,6 +23,9 @@ void timer_app_main() {
   display.setFullWindow();
   display.fillScreen(GxEPD_BLACK);
 
+  // Prevents misfiring of inputs when the app first draws
+  delay(200);
+
   set_buttons_pins_as_inputs();
 
   // Reset state variables
@@ -33,16 +36,15 @@ void timer_app_main() {
 
   char mmss_strings[TIMER_SAVED_SETTINGS_COUNT][6];
   for (int i = 0; i < TIMER_SAVED_SETTINGS_COUNT; i++) {
-    seconds_to_string(timer_saved_settings[i], mmss_strings[i]);
+    seconds_to_HH_mm_string(timer_state.timer_saved_settings[i], mmss_strings[i]);
     timer_menu_items[i] = { mmss_strings[i], nullptr, false, false };
   }
 
   TimerState old_state;
+  PersistentTimerState old_timer_state;
 
+  int loop_delay = 50;
   while(1) {
-    // Store current app state
-    copy_struct(&old_state, &state, sizeof(TimerState));
-
     // Handle inputs
     switch (state.timer_gui_state) {
       case DURATION_SETUP_STATE:
@@ -59,7 +61,7 @@ void timer_app_main() {
       case TIMER_COUNTDOWN_STATE:
         calc_duration();
         display_countdown_page();
-        delay(500);
+        loop_delay = 100;
         break;
       case TIMER_FINISHED_STATE:
         if (!display_finished_page()) return;
@@ -67,7 +69,10 @@ void timer_app_main() {
     }
 
     // Only redraw if app state changed
-    if (!compare_struct(&old_state, &state, sizeof(TimerState))) {
+    if (
+      !compare_struct(&old_state, &state, sizeof(TimerState)) ||
+      !compare_struct(&old_timer_state, &timer_state, sizeof(PersistentTimerState)))
+    {
       display.display(true); // partial refresh
     }
 
@@ -75,6 +80,12 @@ void timer_app_main() {
     if (are_top_buttons_pressed()) {
       return;
     }
+
+    // Store current app state
+    copy_struct(&old_state, &state, sizeof(TimerState));
+    copy_struct(&old_timer_state, &timer_state, sizeof(PersistentTimerState));
+
+    delay(loop_delay);
   }
 }
 
@@ -93,8 +104,8 @@ bool handle_duration_setup_inputs() {
       state.set_index++;
     } else {
       // Start timer and show countdown page
-      state.seconds = (timer_hour * 60 + timer_minute) * 60;
-      pushToFront(timer_saved_settings, state.seconds);
+      state.seconds = (timer_state.timer_hour * 60 + timer_state.timer_minute) * 60;
+      pushToFront(timer_state.timer_saved_settings, state.seconds);
       start_timer();
       state.timer_gui_state = TIMER_COUNTDOWN_STATE;
     }
@@ -106,10 +117,10 @@ bool handle_duration_setup_inputs() {
     state.digit_blink_state = 1;
     switch (state.set_index) {
       case SET_HOUR:
-        timer_hour == 23 ? (timer_hour = 0) : timer_hour++;
+        timer_state.timer_hour == 23 ? (timer_state.timer_hour = 0) : timer_state.timer_hour++;
         break;
       case SET_MINUTE:
-        timer_minute == 59 ? (timer_minute = 0) : timer_minute++;
+        timer_state.timer_minute == 59 ? (timer_state.timer_minute = 0) : timer_state.timer_minute++;
         break;
       default:
         break;
@@ -120,10 +131,10 @@ bool handle_duration_setup_inputs() {
     state.digit_blink_state = 1;
     switch (state.set_index) {
       case SET_HOUR:
-        timer_hour == 0 ? (timer_hour = 23) : timer_hour--;
+        timer_state.timer_hour == 0 ? (timer_state.timer_hour = 23) : timer_state.timer_hour--;
         break;
       case SET_MINUTE:
-        timer_minute == 0 ? (timer_minute = 59) : timer_minute--;
+        timer_state.timer_minute == 0 ? (timer_state.timer_minute = 59) : timer_state.timer_minute--;
         break;
       default:
         break;
@@ -137,8 +148,8 @@ bool handle_saved_duration_state_inputs() {
     state.timer_gui_state = DURATION_SETUP_STATE;
   }
   else if (is_menu_button_pressed()) {
-    state.seconds = timer_saved_settings[state.menu_index];
-    pushToFront(timer_saved_settings, state.seconds);
+    state.seconds = timer_state.timer_saved_settings[state.menu_index];
+    pushToFront(timer_state.timer_saved_settings, state.seconds);
     start_timer();
     state.timer_gui_state = TIMER_COUNTDOWN_STATE;
   }
@@ -153,7 +164,7 @@ bool handle_saved_duration_state_inputs() {
 
 void display_duration_setup() {
   display.fillRect(0, 0, DISPLAY_WIDTH, 75, GxEPD_BLACK);
-  draw_time_digits(timer_hour, timer_minute, 11, state.digit_blink_state, state.set_index);
+  draw_time_digits(timer_state.timer_hour, timer_state.timer_minute, 11, state.digit_blink_state, state.set_index);
 }
 
 void display_saved_duration() {
@@ -193,11 +204,6 @@ void calc_duration() {
   if (state.timestamp_diff >= state.seconds) {
     state.timer_gui_state = TIMER_FINISHED_STATE;
   }
-}
-
-void seconds_to_string(uint32_t seconds, char* mmss_string) {
-  uint32_t minutes = seconds / 60;
-  sprintf(mmss_string, "%02d:%02d", minutes, seconds % 60);
 }
 
 void pushToFront(uint32_t array[], uint32_t new_value) {

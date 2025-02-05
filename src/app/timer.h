@@ -20,6 +20,12 @@ typedef struct {
   uint32_t seconds;
 } TimerState;
 
+typedef struct {
+  int8_t timer_hour;
+  int8_t timer_minute;
+  uint32_t timer_saved_settings[TIMER_SAVED_SETTINGS_COUNT];
+} PersistentTimerState;
+
 /**
  * Main app function - enter app loop
 */
@@ -29,8 +35,6 @@ void timer_app_main();
  * Handle user inputs in this app loop
  */
 bool process_inputs();
-
-void seconds_to_string(uint32_t seconds, char* mmss_string);
 
 /**
  * Displays timer countdown
