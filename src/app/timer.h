@@ -20,8 +20,6 @@ typedef struct {
   uint32_t seconds;
 } TimerState;
 
-extern TimerState state;
-
 /**
  * Main app function - enter app loop
 */
