@@ -4,7 +4,7 @@
 #include "hardware/rtc_sram.h"
 #include <Fonts/FreeMonoBold9pt7b.h>
 
-void draw_menu(menu_item_t menu_items[], uint8_t menu_index, uint8_t y_offset, uint8_t items_to_draw) {
+void draw_menu(menu_item_t menu_items[], uint8_t menu_length, uint8_t menu_index, uint8_t y_offset, uint8_t items_to_draw) {
   display.setFont(&FreeMonoBold9pt7b);
 
   int16_t x1, y1;
@@ -23,7 +23,7 @@ void draw_menu(menu_item_t menu_items[], uint8_t menu_index, uint8_t y_offset, u
   }
 
   for (int i = 0; i < items_to_draw; i++) {
-    if (i + top_window >= MENU_LENGTH) {
+    if (i + top_window >= menu_length) {
       break;
     }
 
