@@ -3,20 +3,24 @@
 #include <GxEPD2_BW.h>
 #include "config.h"
 
-enum timer_app_state_t {
+enum timer_gui_state_t {
   DURATION_SETUP_STATE,
   SAVED_DURATIONS_STATE,
   TIMER_COUNTDOWN_STATE,
   TIMER_FINISHED_STATE,
 };
 
-extern timer_app_state_t timer_app_state;
+typedef struct {
+  int8_t set_index;
+  int8_t digit_blink_state;
+  int8_t menu_index;
+  timer_gui_state_t timer_gui_state;
+  unsigned long start_timestamp;
+  unsigned long timestamp_diff;
+  uint32_t seconds;
+} TimerState;
 
-extern int8_t set_index;
-extern int8_t digit_blink_state;
-
-extern int8_t menu_index;
-
+extern TimerState state;
 
 /**
  * Main app function - enter app loop
