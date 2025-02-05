@@ -47,5 +47,4 @@ weatherData currentWeather = {
   },
 };
 
-int8_t timer_hour = 0;
-int8_t timer_minute = 1;
+PersistentTimerState timer_state = {0, 1, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};

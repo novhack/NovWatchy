@@ -2,7 +2,7 @@
 
 // Versioning
 #define FIRMWARE_NAME "NovWatchy"
-#define FIRMWARE_VERSION "0.2.0"
+#define FIRMWARE_VERSION "0.3.0"
 
 // Watch 20
 #define UP_BTN_PIN 35
@@ -38,3 +38,6 @@
 #define SOFTWARE_VERSION_PATCH 0
 #define HARDWARE_VERSION_MAJOR 1
 #define HARDWARE_VERSION_MINOR 0
+
+// Timer APP
+#define TIMER_SAVED_SETTINGS_COUNT 10

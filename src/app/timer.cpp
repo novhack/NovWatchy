@@ -3,137 +3,228 @@
 #include <Arduino.h>
 
 #include "config.h"
-#include "gui/fonts/DSEG7_Classic_Bold_53.h"
+#include "gui/gen_menu.h"
+#include "gui/menu_items.h"
+#include "gui/time_digits.h"
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include "hardware/button.h"
 #include "hardware/hardware.h"
 #include "hardware/motor.h"
 #include "hardware/rtc_sram.h"
+#include "utils.h"
+
+TimerState state = {
+  SET_MINUTE, 1, 0, SAVED_DURATIONS_STATE, 0, 0, 0,
+};
+
+menu_item_t timer_menu_items[TIMER_SAVED_SETTINGS_COUNT];
 
 void timer_app_main() {
   display.setFullWindow();
+  display.fillScreen(GxEPD_BLACK);
+
+  // Prevents misfiring of inputs when the app first draws
+  delay(200);
 
   set_buttons_pins_as_inputs();
 
-  int8_t set_index = SET_HOUR;
-  int8_t blink = 0;
+  // Reset state variables
+  state.set_index = SET_MINUTE;
+  state.digit_blink_state = 1;
+  state.menu_index = 0;
+  state.timer_gui_state = SAVED_DURATIONS_STATE;
 
-  while(1) {
-    // Process inputs
-    if (is_back_button_pressed()) {
-      if (set_index != SET_HOUR) {
-        set_index--;
-      } else {
-        break;
-      }
-    }
-
-    if (is_menu_button_pressed()) {
-      if (set_index == SET_HOUR) {
-        set_index++;
-      } else {
-        // Start timer and show countdown screen
-        timer_start((timer_hour * 60 + timer_minute) * 60);
-        // After timer finished break the app loop
-        break;
-      }
-    }
-
-    blink = 1 - blink;
-
-    if (is_down_button_pressed()) {
-      blink = 1;
-      switch (set_index) {
-        case SET_HOUR:
-          timer_hour == 23 ? (timer_hour = 0) : timer_hour++;
-          break;
-        case SET_MINUTE:
-          timer_minute == 59 ? (timer_minute = 0) : timer_minute++;
-          break;
-        default:
-          break;
-      }
-    }
-
-    if (is_up_button_pressed()) {
-      blink = 1;
-      switch (set_index) {
-        case SET_HOUR:
-          timer_hour == 0 ? (timer_hour = 23) : timer_hour--;
-          break;
-        case SET_MINUTE:
-          timer_minute == 0 ? (timer_minute = 59) : timer_minute--;
-          break;
-        default:
-          break;
-      }
-    }
-
-    // Display selection screen
-    display.fillScreen(GxEPD_BLACK);
-    display.setTextColor(GxEPD_WHITE);
-    display.setFont(&DSEG7_Classic_Bold_53);
-
-    display.setCursor(5, 80);
-    if (set_index == SET_HOUR) { // blink hour digits
-      display.setTextColor(blink ? GxEPD_WHITE : GxEPD_BLACK);
-    }
-    if (timer_hour < 10) {
-      display.print("0");
-    }
-    display.print(timer_hour);
-
-    display.setTextColor(GxEPD_WHITE);
-    display.print(":");
-
-    display.setCursor(108, 80);
-    if (set_index == SET_MINUTE) { // blink minute digits
-      display.setTextColor(blink ? GxEPD_WHITE : GxEPD_BLACK);
-    }
-    if (timer_minute < 10) {
-      display.print("0");
-    }
-    display.print(timer_minute);
-
-    display.display(true); // partial refresh
+  char mmss_strings[TIMER_SAVED_SETTINGS_COUNT][6];
+  for (int i = 0; i < TIMER_SAVED_SETTINGS_COUNT; i++) {
+    seconds_to_HH_mm_string(timer_state.timer_saved_settings[i], mmss_strings[i]);
+    timer_menu_items[i] = { mmss_strings[i], nullptr, false, false };
   }
-}
 
-void timer_start(uint32_t seconds) {
-  display.setFullWindow();
+  TimerState old_state;
+  PersistentTimerState old_timer_state;
 
-  unsigned long start_timestamp = rtc.getTimestamp();
-
+  int loop_delay = 50;
   while(1) {
+    // Handle inputs
+    switch (state.timer_gui_state) {
+      case DURATION_SETUP_STATE:
+        // Set timer duration, if false is returned the app loop should be broken
+        if (!handle_duration_setup_inputs()) return;
+        display_duration_setup();
+        break;
+      case SAVED_DURATIONS_STATE:
+        // Select duration from list of saved durations
+        if (!handle_saved_duration_state_inputs()) return;
+        display_duration_setup();
+        display_saved_duration();
+        break;
+      case TIMER_COUNTDOWN_STATE:
+        calc_duration();
+        display_countdown_page();
+        loop_delay = 100;
+        break;
+      case TIMER_FINISHED_STATE:
+        if (!display_finished_page()) return;
+        break;
+    }
+
+    // Only redraw if app state changed
+    if (
+      !compare_struct(&old_state, &state, sizeof(TimerState)) ||
+      !compare_struct(&old_timer_state, &timer_state, sizeof(PersistentTimerState)))
+    {
+      display.display(true); // partial refresh
+    }
+
+    // If both top buttons are pressed exit the app
     if (are_top_buttons_pressed()) {
-      break;
+      return;
     }
-    unsigned long timestamp_diff = rtc.getTimestamp() - start_timestamp;
 
-    display.fillScreen(GxEPD_BLACK);
-    display.setTextColor(GxEPD_WHITE);
-    display.setFont(&FreeMonoBold9pt7b);
-    display.setCursor(5, 80);
-    display.println("Remaining time: ");
+    // Store current app state
+    copy_struct(&old_state, &state, sizeof(TimerState));
+    copy_struct(&old_timer_state, &timer_state, sizeof(PersistentTimerState));
 
-    // Maximum amount of minutes is 1440 (HH:mm input format)
-    char mmss_string[8] = "0000:00";
-    seconds_to_string(uint32_t(seconds - timestamp_diff), mmss_string);
-    display.println(mmss_string);
-
-    if (timestamp_diff >= seconds) {
-      display.fillScreen(GxEPD_BLACK);
-      display.println("Timer finished!");
-      display.display(true);
-      motor_vibrate(200, 10);
-      break;
-    }
-    display.display(true);
-    delay(500);
+    delay(loop_delay);
   }
 }
 
-void seconds_to_string(uint32_t seconds, char* mmss_string) {
-  uint32_t minutes = seconds / 60;
-  sprintf(mmss_string, "%02d:%02d", minutes, seconds % 60);
+bool handle_duration_setup_inputs() {
+  // Process inputs
+  if (is_back_button_pressed()) {
+    if (state.set_index != SET_HOUR) {
+      state.set_index--;
+    } else {
+      return false;
+    }
+  }
+
+  if (is_menu_button_pressed()) {
+    if (state.set_index == SET_HOUR) {
+      state.set_index++;
+    } else {
+      // Start timer and show countdown page
+      state.seconds = (timer_state.timer_hour * 60 + timer_state.timer_minute) * 60;
+      push_to_front_unique(timer_state.timer_saved_settings, state.seconds);
+      start_timer();
+      state.timer_gui_state = TIMER_COUNTDOWN_STATE;
+    }
+  }
+
+  state.digit_blink_state = 1 - state.digit_blink_state;
+
+  if (is_down_button_pressed()) {
+    state.digit_blink_state = 1;
+    switch (state.set_index) {
+      case SET_HOUR:
+        timer_state.timer_hour == 23 ? (timer_state.timer_hour = 0) : timer_state.timer_hour++;
+        break;
+      case SET_MINUTE:
+        timer_state.timer_minute == 59 ? (timer_state.timer_minute = 0) : timer_state.timer_minute++;
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (is_up_button_pressed()) {
+    state.digit_blink_state = 1;
+    switch (state.set_index) {
+      case SET_HOUR:
+        timer_state.timer_hour == 0 ? (timer_state.timer_hour = 23) : timer_state.timer_hour--;
+        break;
+      case SET_MINUTE:
+        timer_state.timer_minute == 0 ? (timer_state.timer_minute = 59) : timer_state.timer_minute--;
+        break;
+      default:
+        break;
+    }
+  }
+  return true;
+}
+
+bool handle_saved_duration_state_inputs() {
+  if (is_back_button_pressed()) {
+    state.timer_gui_state = DURATION_SETUP_STATE;
+  }
+  else if (is_menu_button_pressed()) {
+    state.seconds = timer_state.timer_saved_settings[state.menu_index];
+    push_to_front_unique(timer_state.timer_saved_settings, state.seconds);
+    start_timer();
+    state.timer_gui_state = TIMER_COUNTDOWN_STATE;
+  }
+  else if (is_up_button_pressed()) {
+    state.menu_index = state.menu_index == 0 ? TIMER_SAVED_SETTINGS_COUNT - 1 : state.menu_index - 1;
+  }
+  else if (is_down_button_pressed()) {
+    state.menu_index = state.menu_index == TIMER_SAVED_SETTINGS_COUNT - 1 ? 0 : state.menu_index + 1;
+  }
+  return true;
+}
+
+void display_duration_setup() {
+  display.fillRect(0, 0, DISPLAY_WIDTH, 75, GxEPD_BLACK);
+  draw_time_digits(timer_state.timer_hour, timer_state.timer_minute, 11, state.digit_blink_state, state.set_index);
+}
+
+void display_saved_duration() {
+  display.fillRect(0, 75, DISPLAY_WIDTH, 125, GxEPD_BLACK);
+  draw_menu(timer_menu_items, TIMER_SAVED_SETTINGS_COUNT, state.menu_index, 75, 5);
+}
+
+void start_timer() {
+  state.start_timestamp = rtc.getTimestamp();
+}
+
+void display_countdown_page() {
+  display.fillScreen(GxEPD_BLACK);
+  display.setTextColor(GxEPD_WHITE);
+  display.setFont(&FreeMonoBold9pt7b);
+  display.setCursor(20, 65);
+  display.println("Remaining time:");
+
+  uint32_t diff_seconds = state.seconds - state.timestamp_diff;
+  uint8_t minutes = diff_seconds / 60;
+  uint8_t seconds = diff_seconds % 60;
+  draw_time_digits(minutes, seconds, 75);
+}
+
+bool display_finished_page() {
+  display.fillScreen(GxEPD_BLACK);
+  display.setFont(&FreeMonoBold9pt7b);
+  display.setCursor(15, 95);
+  display.println("Timer finished!");
+  display.display(true);
+  motor_vibrate(200, 10);
+  return false;
+}
+
+void calc_duration() {
+  state.timestamp_diff = rtc.getTimestamp() - state.start_timestamp;
+  if (state.timestamp_diff >= state.seconds) {
+    state.timer_gui_state = TIMER_FINISHED_STATE;
+  }
+}
+
+void push_to_front_unique(uint32_t array[], uint32_t new_value) {
+
+    int found_index = -1;
+    for (int i = 0; i < TIMER_SAVED_SETTINGS_COUNT; i++) {
+      if (array[i] == new_value) {
+        found_index = i;
+        break;
+      }
+    }
+
+    int cut_off_index = TIMER_SAVED_SETTINGS_COUNT - 1;
+    if (found_index != -1) {
+      cut_off_index = found_index;
+    }
+
+    // Shift all elements to the right by one position
+    for (int i = cut_off_index; i > 0; i--) {
+        array[i] = array[i - 1];
+    }
+    // Place the new value at the front
+    array[0] = new_value;
 }
