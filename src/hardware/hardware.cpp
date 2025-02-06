@@ -41,7 +41,7 @@ void boot(String datetime) {
   gmtOffset = settings.gmtOffset;
   rtc.read(current_time);
   rtc.read(bootTime);
-  motor_vibrate(75, 4);
+  vibrate_motor(2, 75, 75);
   // For some reason, seems to be enabled on first boot
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <string.h>
+#include <stdio.h>
 
 /**
  * Copy structure from source to destination.

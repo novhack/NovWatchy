@@ -32,7 +32,7 @@ void rtc_wakeup() {
       if (settings.vibrateOClock) {
         if (current_time.Minute == 0) {
           // The RTC wakes us up once per minute
-          motor_vibrate(75, 4);
+          vibrate_motor(1, 75, 75);
         }
       }
       break;

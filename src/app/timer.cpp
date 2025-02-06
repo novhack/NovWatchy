@@ -195,7 +195,7 @@ bool display_finished_page() {
   display.setCursor(15, 95);
   display.println("Timer finished!");
   display.display(true);
-  motor_vibrate(200, 10);
+  vibrate_motor(5, 200, 100);
   return false;
 }
 

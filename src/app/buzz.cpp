@@ -13,5 +13,5 @@ void showBuzz() {
   display.setCursor(70, 80);
   display.println("Buzz!");
   display.display(false); // full refresh
-  motor_vibrate();
+  vibrate_motor();
 }
